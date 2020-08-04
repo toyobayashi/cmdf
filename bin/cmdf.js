@@ -6,28 +6,43 @@ const path = require('path')
 const os = require('os')
 const { generateRegistryScript } = require('..')
 
-function getAllFonts () {
-  const tmpfile = path.join(__dirname, 'fonts.reg')
-  childProcess.execSync(`regedit.exe -e "${tmpfile}" "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts"`)
-  const lines = fs.readFileSync(tmpfile).slice(2).toString('utf16le').split(os.EOL)
-  fs.unlinkSync(tmpfile)
-  const arr = lines.slice(3, lines.length - 2).map(line => {
-    const kv = line.split('=').map(v => {
-      return JSON.parse(v)
-    })
-    return {
-      key: kv[0],
-      value: kv[1]
-    }
-  })
-  return arr
+function quote (pathLike) {
+  return pathLike.indexOf(' ') !== -1 ? `"${pathLike}"` : pathLike
 }
 
-function findFontFile (list, name) {
-  for (let i = 0; i < list.length; i++) {
-    const kv = list[i]
+function _getFonts (regPath) {
+  return function () {
+    const tmpfile = path.join(__dirname, 'fonts.reg')
+    childProcess.execSync(`regedit.exe -e "${tmpfile}" "${regPath}"`)
+    const lines = fs.readFileSync(tmpfile).slice(2).toString('utf16le').split(os.EOL)
+    fs.unlinkSync(tmpfile)
+    return lines.slice(3, lines.length - 2).map(line => {
+      const kv = line.split('=').map(v => {
+        return JSON.parse(v)
+      })
+      return {
+        key: kv[0],
+        value: kv[1]
+      }
+    })
+  }
+}
+
+const getUserFonts = _getFonts('HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts')
+const getSystemFonts = _getFonts('HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts')
+
+function findFontFile (user, system, name) {
+  let i, kv
+  for (i = 0; i < user.length; i++) {
+    kv = user[i]
     if (kv.key.indexOf(name) !== -1) {
-      return kv.value
+      return quote(kv.value)
+    }
+  }
+  for (i = 0; i < system.length; i++) {
+    kv = system[i]
+    if (kv.key.indexOf(name) !== -1) {
+      return quote(kv.value)
     }
   }
   return ''
@@ -56,23 +71,25 @@ function saveRegistry (buffer) {
   fs.unlinkSync(regFile)
 }
 
+function printHelp () {
+  console.log('cmdf v' + require('../package.json').version)
+  console.log(os.EOL + 'Usage: cmdf <font> [fallback [scale]]')
+  console.log(os.EOL + 'Example: cmdf Consolas "Microsoft YaHei" 128,96')
+}
+
 async function main (argc, argv) {
   if (process.platform !== 'win32') throw new Error('Windows only.')
 
-  if (argc < 3) {
-    console.log('cmdf v' + require('../package.json').version)
-    console.log(os.EOL + 'Usage: cmdf <font> [fallback] [scale]')
-    console.log(os.EOL + 'Example: cmdf "Consolas" "Microsoft YaHei" 128,96')
-    return 0
-  }
+  if (argc < 3) return (printHelp(), 0)
 
   const codePage = getCodePage()
-  const fontName = argv[2] || 'Consolas'
+  const fontName = argv[2]
   const fallbackName = argv[3]
 
-  const keyvalues = getAllFonts()
+  const userFonts = getUserFonts()
+  const systemFonts = getSystemFonts()
 
-  if (!findFontFile(keyvalues, fontName)) {
+  if (!findFontFile(userFonts, systemFonts, fontName)) {
     throw new Error('Can not find font: ' + fontName)
   }
 
@@ -80,7 +97,7 @@ async function main (argc, argv) {
   let fallbackFontFile
   let scale
   if (fallbackName) {
-    fallbackFontFile = findFontFile(keyvalues, fallbackName)
+    fallbackFontFile = findFontFile(userFonts, systemFonts, fallbackName)
     if (!fallbackFontFile) {
       throw new Error('Can not find font: ' + fallbackName)
     }
