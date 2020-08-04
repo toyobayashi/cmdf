@@ -127,7 +127,7 @@ async function main (argc, argv) {
   console.log(`Code page: ${codePage}`)
   console.log(`Font name: ${fontName}`)
   if (fallbackName) {
-    console.log(`Fallback: ${fallbackFontFile}::${fallbackName}, ${scale[0]}, ${scale[1]}`)
+    console.log(`Fallback: ${fallbackFontFile}, ${fallbackName}, ${scale[0]}, ${scale[1]}`)
   }
 
   console.log(os.EOL + 'Logout Windows and login again then change code page to 437')
