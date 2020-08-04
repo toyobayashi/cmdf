@@ -1,0 +1,26 @@
+{
+  "name": "@tybys/cmdf",
+  "version": "1.0.0",
+  "description": "Change the default font of Windows command line.",
+  "main": "./index.js",
+  "typings": "./index.d.ts",
+  "keywords": [
+    "font"
+  ],
+  "author": "toyobayashi",
+  "license": "MIT",
+  "bin": {
+    "cmdf": "./bin/cmdf.js"
+  },
+  "os": [
+    "win32"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/toyobayashi/cmdf.git"
+  },
+  "homepage": "https://github.com/toyobayashi/cmdf#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}
