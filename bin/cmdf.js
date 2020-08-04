@@ -16,7 +16,16 @@ function _getFonts (regPath) {
     childProcess.execSync(`regedit.exe -e "${tmpfile}" "${regPath}"`)
     const lines = fs.readFileSync(tmpfile).slice(2).toString('utf16le').split(os.EOL)
     fs.unlinkSync(tmpfile)
-    return lines.slice(3, lines.length - 2).map(line => {
+    const list = []
+    for (let i = 3; i < lines.length; i++) {
+      if (lines[i] === '') {
+        break
+      } else {
+        list.push(lines[i])
+      }
+    }
+
+    return list.map(line => {
       const kv = line.split('=').map(v => {
         return JSON.parse(v)
       })
