@@ -130,8 +130,6 @@ async function main (argc, argv) {
     console.log(`Fallback: ${fallbackFontFile}, ${fallbackName}, ${scale[0]}, ${scale[1]}`)
   }
 
-  console.log(os.EOL + 'Logout Windows and login again then change code page to 437')
-  console.log('in command line prompt / Powershell and configure the font.')
   return 0
 }
 
